@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.6//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_6.dtd'>
+<nta>
+	<declaration>// Place template instantiations here.
+typedef int[0,1] id_valve;
+int pressure;
+
+chan V_open[2], V_close[2], M_on[2], M_off[2], B_on, B_off;
+chan start, stop;
+bool bM_on[2], bV_closed[2];
+bool MaxPressureReached;
+int iNumberM_on := 0;
+
+</declaration>
+	<template>
+		<name x="9" y="9">Valve</name>
+		<parameter>const id_valve id</parameter>
+		<declaration>// Place local declarations here.
+chan V1_open, V1_close, V2_open, V2_close;</declaration>
+		<location id="id0" x="-272" y="0">
+			<name x="-365" y="-8">Opened</name>
+		</location>
+		<location id="id1" x="-136" y="0">
+			<name x="-119" y="-8">Closed</name>
+		</location>
+		<init ref="id0"/>
+		<transition id="id2">
+			<source ref="id1"/>
+			<target ref="id0"/>
+			<label kind="synchronisation" x="-238" y="51">V_open[id]?</label>
+			<label kind="assignment" x="-297" y="34">bV_closed[id] := false</label>
+			<nail x="-204" y="34"/>
+		</transition>
+		<transition id="id3">
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="synchronisation" x="-246" y="-85">V_close[id]?</label>
+			<label kind="assignment" x="-289" y="-59">bV_closed[id] := true</label>
+			<nail x="-204" y="-34"/>
+		</transition>
+	</template>
+	<template>
+		<name>Motor</name>
+		<parameter>const id_valve id</parameter>
+		<location id="id4" x="-408" y="0">
+			<name x="-450" y="-17">Off</name>
+		</location>
+		<location id="id5" x="-204" y="0">
+			<name x="-187" y="-17">On</name>
+		</location>
+		<init ref="id4"/>
+		<transition id="id6">
+			<source ref="id5"/>
+			<target ref="id4"/>
+			<label kind="synchronisation" x="-340" y="76">M_off[id]?</label>
+			<label kind="assignment" x="-408" y="34">bM_on[id] := false,
+iNumberM_on := iNumberM_on - 1</label>
+			<nail x="-306" y="34"/>
+		</transition>
+		<transition id="id7">
+			<source ref="id4"/>
+			<target ref="id5"/>
+			<label kind="synchronisation" x="-348" y="-93">M_on[id]?</label>
+			<label kind="assignment" x="-408" y="-76">bM_on[id] := true,
+iNumberM_on := iNumberM_on + 1</label>
+			<nail x="-306" y="-34"/>
+		</transition>
+	</template>
+	<template>
+		<name>Button</name>
+		<location id="id8" x="0" y="0">
+			<name x="-10" y="-34">Off</name>
+		</location>
+		<location id="id9" x="136" y="0">
+			<name x="126" y="-34">On</name>
+		</location>
+		<init ref="id8"/>
+		<transition id="id10">
+			<source ref="id9"/>
+			<target ref="id9"/>
+			<label kind="select" x="212" y="-17">e : id_valve</label>
+			<label kind="synchronisation" x="204" y="0">M_off[e]!</label>
+			<nail x="204" y="-17"/>
+			<nail x="204" y="17"/>
+		</transition>
+		<transition id="id11">
+			<source ref="id8"/>
+			<target ref="id8"/>
+			<label kind="select" x="-153" y="51">e : id_valve</label>
+			<label kind="synchronisation" x="-110" y="68">M_off[e]!</label>
+			<nail x="-34" y="68"/>
+			<nail x="-59" y="51"/>
+		</transition>
+		<transition id="id12">
+			<source ref="id9"/>
+			<target ref="id9"/>
+			<label kind="select" x="187" y="34">e : id_valve</label>
+			<label kind="guard" x="187" y="68">MaxPressureReached == false</label>
+			<label kind="synchronisation" x="187" y="51">M_on[e]!</label>
+			<nail x="170" y="59"/>
+			<nail x="187" y="34"/>
+		</transition>
+		<transition id="id13">
+			<source ref="id9"/>
+			<target ref="id8"/>
+			<label kind="synchronisation" x="51" y="17">B_off!</label>
+			<nail x="119" y="8"/>
+			<nail x="68" y="17"/>
+		</transition>
+		<transition id="id14">
+			<source ref="id8"/>
+			<target ref="id9"/>
+			<label kind="synchronisation" x="51" y="-42">B_on!</label>
+			<nail x="8" y="-8"/>
+			<nail x="68" y="-17"/>
+		</transition>
+		<transition id="id15">
+			<source ref="id9"/>
+			<target ref="id9"/>
+			<label kind="select" x="187" y="-76">e : id_valve</label>
+			<label kind="synchronisation" x="195" y="-59">V_close[e]!</label>
+			<nail x="170" y="-68"/>
+			<nail x="195" y="-34"/>
+		</transition>
+		<transition id="id16">
+			<source ref="id8"/>
+			<target ref="id8"/>
+			<label kind="select" x="-186" y="-76">e : id_valve</label>
+			<label kind="synchronisation" x="-161" y="-59">V_open[e]!</label>
+			<nail x="-68" y="-34"/>
+			<nail x="-51" y="-59"/>
+		</transition>
+	</template>
+	<template>
+		<name>Hydraulic_Line</name>
+		<declaration>clock t;
+bool result;
+bool any_valve_opened(){ return bV_closed[0] == false or bV_closed[1] == false;}
+bool motors_on(){return bM_on[0] == true and bM_on[1] == true;}
+bool condition_correct(){ return !any_valve_opened() and motors_on();}</declaration>
+		<location id="id17" x="-841" y="-561">
+			<name x="-883" y="-595">P_decrease</name>
+		</location>
+		<location id="id18" x="-569" y="-561">
+			<name x="-611" y="-595">P_increase1</name>
+		</location>
+		<location id="id19" x="-705" y="-561">
+			<name x="-730" y="-595">P_null</name>
+		</location>
+		<init ref="id19"/>
+		<transition id="id20" controllable="false">
+			<source ref="id18"/>
+			<target ref="id17"/>
+			<label kind="guard" x="-807" y="-484">bV_closed[0] == false &amp;&amp;
+pressure &gt; 0</label>
+			<nail x="-569" y="-485"/>
+			<nail x="-841" y="-485"/>
+		</transition>
+		<transition id="id21" controllable="false">
+			<source ref="id18"/>
+			<target ref="id19"/>
+			<label kind="guard" x="-705" y="-527">iNumberM_on == 0</label>
+			<nail x="-637" y="-527"/>
+		</transition>
+		<transition id="id22" controllable="false">
+			<source ref="id19"/>
+			<target ref="id17"/>
+			<label kind="guard" x="-918" y="-527">bV_closed[0] == false &amp;&amp;
+pressure &gt; 0</label>
+			<nail x="-773" y="-527"/>
+		</transition>
+		<transition id="id23" controllable="false">
+			<source ref="id19"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-688" y="-654">iNumberM_on &gt; 0 &amp;&amp;
+bV_closed[0] == true</label>
+			<nail x="-637" y="-603"/>
+		</transition>
+		<transition id="id24" controllable="false">
+			<source ref="id17"/>
+			<target ref="id19"/>
+			<label kind="guard" x="-833" y="-646">pressure == 0</label>
+			<label kind="assignment" x="-858" y="-620">MaxPressureReached := false</label>
+			<nail x="-773" y="-595"/>
+		</transition>
+		<transition id="id25" controllable="false">
+			<source ref="id17"/>
+			<target ref="id17"/>
+			<label kind="guard" x="-1139" y="-646">t &gt; 1 &amp;&amp; 
+pressure &gt; 0 &amp;&amp;
+bV_closed[0] == false</label>
+			<label kind="assignment" x="-1139" y="-578">t := 0, 
+pressure := pressure - 10</label>
+			<nail x="-909" y="-578"/>
+			<nail x="-909" y="-553"/>
+		</transition>
+		<transition id="id26" controllable="false">
+			<source ref="id18"/>
+			<target ref="id18"/>
+			<label kind="guard" x="-476" y="-637">t &gt; 5 &amp;&amp;
+pressure &lt; 200 &amp;&amp;
+bV_closed[0] == true &amp;&amp;
+iNumberM_on &gt; 0</label>
+			<label kind="assignment" x="-475" y="-553">t := 0, 
+pressure := pressure + 10</label>
+			<nail x="-501" y="-570"/>
+			<nail x="-501" y="-544"/>
+		</transition>
+	</template>
+	<template>
+		<name>Actuator</name>
+		<location id="id27" x="-170" y="0">
+			<name x="-280" y="-17">Deactivated</name>
+		</location>
+		<location id="id28" x="-42" y="0">
+			<name x="-59" y="-34">Middle</name>
+		</location>
+		<location id="id29" x="102" y="0">
+			<name x="119" y="-17">Activated</name>
+		</location>
+		<init ref="id27"/>
+		<transition id="id30" controllable="false">
+			<source ref="id29"/>
+			<target ref="id28"/>
+			<label kind="guard" x="-17" y="34">pressure &lt; 100</label>
+			<nail x="34" y="34"/>
+		</transition>
+		<transition id="id31" controllable="false">
+			<source ref="id28"/>
+			<target ref="id29"/>
+			<label kind="guard" x="-24" y="-51">pressure &gt;= 100</label>
+			<nail x="34" y="-34"/>
+		</transition>
+		<transition id="id32" controllable="false">
+			<source ref="id28"/>
+			<target ref="id27"/>
+			<label kind="guard" x="-153" y="34">pressure == 0</label>
+			<nail x="-102" y="34"/>
+		</transition>
+		<transition id="id33" controllable="false">
+			<source ref="id27"/>
+			<target ref="id28"/>
+			<label kind="guard" x="-152" y="-51">pressure &gt; 0</label>
+			<nail x="-102" y="-34"/>
+		</transition>
+	</template>
+	<template>
+		<name>Controller</name>
+		<location id="id34" x="-1020" y="-680">
+		</location>
+		<location id="id35" x="-612" y="-782">
+			<committed/>
+		</location>
+		<location id="id36" x="-612" y="-680">
+			<label kind="invariant" x="-595" y="-680">pressure &gt; 0</label>
+		</location>
+		<location id="id37" x="-748" y="-782">
+			<label kind="invariant" x="-824" y="-773">pressure &lt;= 100</label>
+		</location>
+		<location id="id38" x="-824" y="-680">
+			<committed/>
+		</location>
+		<location id="id39" x="-1020" y="-782">
+			<committed/>
+		</location>
+		<location id="id40" x="-884" y="-782">
+			<committed/>
+		</location>
+		<init ref="id34"/>
+		<transition id="id41">
+			<source ref="id39"/>
+			<target ref="id40"/>
+			<label kind="select" x="-1003" y="-824">e : id_valve</label>
+			<label kind="synchronisation" x="-1002" y="-811">V_close[e]!</label>
+		</transition>
+		<transition id="id42">
+			<source ref="id40"/>
+			<target ref="id37"/>
+			<label kind="select" x="-867" y="-824">e : id_valve</label>
+			<label kind="synchronisation" x="-867" y="-807">M_on[e]!</label>
+		</transition>
+		<transition id="id43">
+			<source ref="id34"/>
+			<target ref="id39"/>
+			<label kind="synchronisation" x="-1011" y="-731">B_on?</label>
+		</transition>
+		<transition id="id44">
+			<source ref="id36"/>
+			<target ref="id38"/>
+			<label kind="synchronisation" x="-748" y="-705">B_off?</label>
+		</transition>
+		<transition id="id45">
+			<source ref="id38"/>
+			<target ref="id34"/>
+			<label kind="select" x="-969" y="-671">e : id_valve</label>
+			<label kind="synchronisation" x="-969" y="-654">V_open[e]!</label>
+		</transition>
+		<transition id="id46">
+			<source ref="id37"/>
+			<target ref="id35"/>
+			<label kind="guard" x="-739" y="-816">pressure == 100</label>
+		</transition>
+		<transition id="id47">
+			<source ref="id35"/>
+			<target ref="id36"/>
+			<label kind="select" x="-595" y="-748">e : id_valve</label>
+			<label kind="synchronisation" x="-595" y="-731">M_off[e]!</label>
+			<label kind="assignment" x="-595" y="-714">MaxPressureReached := true</label>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+Valve1 = Valve(0);
+
+Motor1 = Motor(0);
+// List one or more processes to be composed into a system.
+system Valve1, Motor1, Button, Hydraulic_Line, Actuator, Controller;
+</system>
+	<queries>
+		<option key="--diagnostic" value="1"/>
+		<query>
+			<formula/>
+			<comment>https://docs.uppaal.org/language-reference/requirements-specification/symb_queries/</comment>
+		</query>
+		<query>
+			<formula>==== Safety Properties:</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>(pressure == 100 and Valve1.Opened) --&gt; pressure == 0</formula>
+			<comment/>
+			<result outcome="failure" type="quality" timestamp="2023-12-06 16:51:34 -0300">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>Button.Off --&gt; Valve1.Opened</formula>
+			<comment>Button_S_Valve</comment>
+			<option key="--diagnostic" value="1"/>
+			<result outcome="success" type="quality" timestamp="2023-12-06 16:51:37 -0300">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>Button.On --&gt; Actuator.Activated </formula>
+			<comment/>
+			<result outcome="failure" type="quality" timestamp="2023-12-06 16:51:41 -0300">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>Button.On --&gt; Valve1.Closed</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2023-12-06 16:51:44 -0300">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>Button.On --&gt; Motor1.On</formula>
+			<comment/>
+			<result outcome="failure" type="quality" timestamp="2023-12-06 16:51:47 -0300">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>A[] pressure &lt; 150</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2023-12-06 16:51:49 -0300">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula/>
+			<comment/>
+		</query>
+		<query>
+			<formula>==== Liveness Properties:</formula>
+			<comment/>
+		</query>
+		<query>
+			<formula>A[] not deadlock</formula>
+			<comment/>
+			<result outcome="failure" type="quality" timestamp="2023-12-06 16:51:54 -0300">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>A&lt;&gt; Actuator.Activated</formula>
+			<comment/>
+			<result outcome="failure" type="quality" timestamp="2023-12-06 16:51:57 -0300">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula>A&lt;&gt; Button.Off</formula>
+			<comment/>
+			<result outcome="success" type="quality" timestamp="2023-12-06 16:52:00 -0300">
+				<option key="--diagnostic" value="1"/>
+			</result>
+		</query>
+		<query>
+			<formula/>
+			<comment/>
+		</query>
+	</queries>
+</nta>
